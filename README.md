@@ -80,40 +80,67 @@ Settings → Personalization → Taskbar → Other system tray icons → `clawd-
   line and for Clawd and show the `host` in the hover list. A source that
   fails, hangs or has a `generatedAt` older than two minutes adds nothing.
 
-  **A Linux machine on another network** — through a secret GitHub gist, no
-  open ports needed. The machine writes its sessions to the gist, the widget
-  reads them back:
+  **A Linux machine on another network** — the machine publishes its sessions
+  and the widget picks them up, with no open ports. Two ways:
 
-  1. Create the gist once, from any computer with the GitHub CLI:
-     ```bash
-     echo '{"sessions":[]}' > sessions.json && gh gist create sessions.json
+  *Firebase Realtime Database (live).* The widget keeps a connection open to one
+  path of the database and every change is pushed down it at once. Free on
+  Firebase's Spark plan; this uses a sliver of it.
+
+  1. In the [Firebase console](https://console.firebase.google.com): add a
+     project, then *Build → Realtime Database → Create database*, in locked mode.
+  2. Make up a long random key (`openssl rand -hex 24`) and set the database's
+     *Rules* to open only `feeds/<key>`:
+     ```json
+     { "rules": { ".read": false, ".write": false,
+         "feeds": { "<key>": { ".read": true, ".write": true } } } }
      ```
-     (`gh gist create` makes a secret gist: unlisted, readable by its address.)
-  2. On the Linux machine (needs `curl`, `jq` and systemd), with a GitHub token
-     that may write gists (a classic token with only the `gist` scope, or a
-     fine-grained one with *Gists: read and write*):
+     Like a secret gist: whoever knows the address can read and write that one
+     path, nothing else.
+  3. On the Linux machine (needs `curl`, `jq` and systemd):
      ```bash
      git clone https://github.com/bugraceylan/clawd-usage-winwidget.git
-     cd clawd-usage-winwidget/remote && ./install-linux.sh <gist-id> HQ2
+     cd clawd-usage-winwidget/remote && ./install-linux.sh https://<db>.firebaseio.com/feeds/<key> HQ2
      ```
-     It asks for the token, keeps it in `~/.config/clawd-publish/env` (mode
-     600), writes the gist once as a check and starts the
-     `clawd-sessions-publish` user service. For it to run while you are logged
-     out and start at boot: `sudo loginctl enable-linger $USER`.
-  3. In the widget's `config.json`: `"remoteSessions": ["gist:<gist-id>"]`.
+     It writes the settings to `~/.config/clawd-publish/env` (mode 600), writes
+     the feed once as a check and starts the `clawd-sessions-publish` user
+     service. For it to run while you are logged out and start at boot:
+     `sudo loginctl enable-linger $USER`.
+  4. In the widget's `config.json`: `"remoteSessions": ["https://<db>.firebaseio.com/feeds/<key>"]`
+     (a regional database's `…firebasedatabase.app` address works the same).
 
-  The service writes when a session changes and every 45 seconds anyway, and an
-  empty list when it is stopped. A session counts only while its process is
-  Claude Code itself and started before its registry file was last written, so
-  files left from before a reboot whose pid is now another program stay out. Its
-  name is the one given with `--remote-control <name>`, else the registry's.
-  `shell` (a background task is running) counts as working and reads "background
-  task"; any other status the widget does not know is shown as it is, with a grey
-  dot. `clawd-sessions-publish.sh --dry` prints what it would write;
-  `bash tools/publish-test.sh` checks the process and name rules. The widget reads the gist through GitHub's API
-  with your `gh` login (or `githubToken` in `config.json`) every refresh;
-  without any token GitHub allows 60 reads an hour, so it reads every 75 seconds.
-  Every write is a new revision of the gist; delete the gist to clear its history.
+  The service looks every 2 seconds, writes each change and once a minute
+  anyway; the widget drops the feed after two missed minutes. A lost connection
+  comes back by itself.
+
+  *A secret GitHub gist (slower).* No new account, but GitHub allows 100 gist
+  updates an hour per user, across all your gists:
+
+  1. `echo '{"sessions":[]}' > sessions.json && gh gist create sessions.json`
+     (a secret gist: unlisted, readable by its address).
+  2. On the Linux machine, with a token that may write gists (a classic token
+     with only the `gist` scope, or a fine-grained one with *Gists: read and
+     write*): `./install-linux.sh <gist-id> HQ2` - it asks for the token.
+  3. In `config.json`: `"remoteSessions": ["gist:<gist-id>"]`.
+
+  The service then writes at most 40 times an hour (`CLAWD_WRITES_PER_HOUR`),
+  up to 4 back to back (`CLAWD_BURST`), faster changes together, and every 5
+  minutes anyway; the widget drops the feed after two missed 5-minute writes. It
+  reads the gist through GitHub's API with your `gh` login (or `githubToken` in
+  `config.json`) every refresh; without any token every 75 seconds. Every write
+  is a new revision of the gist; delete the gist to clear its history.
+
+  Either way: turned away by the server, the service waits for the reset it names
+  and logs why (`journalctl --user -u clawd-sessions-publish`); it writes an empty
+  list when stopped. A session counts only while its process is Claude Code
+  itself and started before its registry file was last written, so files left
+  from before a reboot whose pid is now another program stay out. Its name is the
+  one given with `--remote-control <name>`, else the registry's. `shell` (a
+  background task is running) counts as working and reads "background task"; any
+  other status the widget does not know is shown as it is, with a grey dot.
+  `clawd-sessions-publish.sh --dry` prints what it would write;
+  `bash tools/publish-test.sh` and `tools\stream-test.ps1` check the publisher's
+  rules and the widget's live reader.
 - **Service status** — green "All Claude systems operational", or yellow/red
   with the active incident and affected components. Click opens
   status.claude.com.
@@ -487,7 +514,7 @@ are picked up on the fly, no restart needed.
 | `showStats` / `showStatus` / `showSessions` / `showAccount` | show the corresponding block |
 | `showSessionList` | under the sessions line, one row per session: green working, yellow waiting for you, grey idle, and for how long |
 | `sessionListHeight` | height of that list; drag the window's bottom edge to set it, the rest scrolls with the wheel; double-click the edge (or empty) - all rows |
-| `remoteSessions` | sessions running on other machines: a list of URLs or file paths, or `gist:<id>`, see above |
+| `remoteSessions` | sessions running on other machines: a list of URLs or file paths, a Firebase Realtime Database path (pushed live) or `gist:<id>`, see above |
 | `githubToken` | token for reading a `gist:` source; empty — the `gh` CLI login |
 | `showHistory` | the 7-day chart and top projects in details (off by default) |
 | `showMascot` / `showSky` | Clawd and the sky behind him |

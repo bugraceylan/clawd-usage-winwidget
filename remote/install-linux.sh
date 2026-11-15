@@ -2,16 +2,18 @@
 # Installs clawd-sessions-publish for the current user on Linux, as a systemd user
 # service that starts with the machine.
 #
+#   ./install-linux.sh https://<db>.firebaseio.com/feeds/<key> [host-name]
 #   ./install-linux.sh <gist-id> [host-name]
 #
-# Asks for the GitHub token (it is not echoed) and keeps it in
-# ~/.config/clawd-publish/env, readable only by you. Run it again to change the
-# gist, the name or the token.
+# A Firebase Realtime Database path needs no token: the database's rules open only
+# that path (see the README). For a gist it asks for the GitHub token (not echoed). The
+# settings go to ~/.config/clawd-publish/env, readable only by you, and replace what was
+# there - run it again to switch the target, the name or the token.
 set -eu
 
-GIST_ID="${1:-}"
+TARGET="${1:-}"
 HOST_NAME="${2:-$(hostname -s 2>/dev/null || hostname)}"
-[ -n "$GIST_ID" ] || { echo "usage: $0 <gist-id> [host-name]" >&2; exit 1; }
+[ -n "$TARGET" ] || { echo "usage: $0 <firebase-path-url | gist-id> [host-name]" >&2; exit 1; }
 
 here="$(cd "$(dirname "$0")" && pwd)"
 for cmd in curl jq systemctl; do
@@ -23,22 +25,31 @@ mkdir -p "$HOME/.local/bin" "$conf_dir" "${XDG_CONFIG_HOME:-$HOME/.config}/syste
 install -m 755 "$here/clawd-sessions-publish.sh" "$HOME/.local/bin/clawd-sessions-publish.sh"
 install -m 644 "$here/clawd-sessions-publish.service" "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/clawd-sessions-publish.service"
 
-token="${CLAWD_GIST_TOKEN:-}"
-if [ -z "$token" ]; then
-    read -r -s -p "GitHub token that may write gists: " token
-    echo
-fi
-[ -n "$token" ] || { echo "no token given" >&2; exit 1; }
-
 umask 077
-cat > "$conf_dir/env" <<EOF
-CLAWD_GIST_ID='$GIST_ID'
+case "$TARGET" in
+    https://*)
+        cat > "$conf_dir/env" <<EOF
+CLAWD_FIREBASE_URL='$TARGET'
+CLAWD_HOST='$HOST_NAME'
+EOF
+        ;;
+    *)
+        token="${CLAWD_GIST_TOKEN:-}"
+        if [ -z "$token" ]; then
+            read -r -s -p "GitHub token that may write gists: " token
+            echo
+        fi
+        [ -n "$token" ] || { echo "no token given" >&2; exit 1; }
+        cat > "$conf_dir/env" <<EOF
+CLAWD_GIST_ID='$TARGET'
 CLAWD_GIST_TOKEN='$token'
 CLAWD_HOST='$HOST_NAME'
 EOF
+        ;;
+esac
 chmod 600 "$conf_dir/env"
 
-# One write first: a wrong token or gist id shows up here, not silently in the service.
+# One write first: a wrong address, rules or token shows up here, not silently in the service.
 "$HOME/.local/bin/clawd-sessions-publish.sh" --once
 
 systemctl --user daemon-reload

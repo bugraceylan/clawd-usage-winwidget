@@ -46,6 +46,7 @@ function Stop-Widget {
     } catch {}
     try { Remove-Item $script:UsageFile -ErrorAction Stop } catch {}
     try { Remove-Item $script:AuthFile -ErrorAction Stop } catch {}
+    try { Stop-AllFeedStreams } catch {}
     $notify.Visible = $false
     $notify.Dispose()
     if ($script:LastIconHandle -ne [IntPtr]::Zero) {

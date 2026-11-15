@@ -52,4 +52,24 @@ check '--remote-control=<name> keeps its case'              [ "$(proc_rc_name "$
 check '--remote-control followed by a flag gives no name'   [ -z "$(proc_rc_name "$noval")" ]
 check 'no --remote-control gives no name'                   [ -z "$(proc_rc_name "$$")" ]
 
+# GitHub's answers to a write: how long to wait before the next one.
+now=1794760000
+printf 'HTTP/2 403\r\nx-ratelimit-limit: 100\r\nx-ratelimit-remaining: 0\r\nx-ratelimit-reset: %s\r\nx-ratelimit-resource: gist_update\r\n' $((now + 1200)) > "$tmp/h-gist"
+printf 'HTTP/2 403\r\nretry-after: 30\r\n' > "$tmp/h-retry"
+printf 'HTTP/2 403\r\nx-ratelimit-remaining: 0\r\nx-ratelimit-reset: %s\r\n' $((now + 10)) > "$tmp/h-soon"
+printf 'HTTP/2 429\r\n' > "$tmp/h-429"
+printf 'HTTP/2 403\r\nx-ratelimit-remaining: 57\r\n' > "$tmp/h-perm"
+check 'exhausted gist_update limit waits for its reset'     [ "$(limit_wait "$tmp/h-gist" 403 $now)" = 1205 ]
+check 'retry-after is kept, at least a minute'              [ "$(limit_wait "$tmp/h-retry" 403 $now)" = 60 ]
+check 'a reset seconds away still waits a minute'           [ "$(limit_wait "$tmp/h-soon" 403 $now)" = 60 ]
+check '429 without hints waits five minutes'                [ "$(limit_wait "$tmp/h-429" 429 $now)" = 300 ]
+check '403 with requests left is not a rate limit'          [ -z "$(limit_wait "$tmp/h-perm" 403 $now)" ]
+check 'a server error is not a rate limit'                  [ -z "$(limit_wait "$tmp/h-gist" 502 $now)" ]
+
+# Firebase REST addresses.
+check 'firebase: path gets .json'          [ "$(firebase_json_url 'https://x.firebaseio.com/feeds/k')" = 'https://x.firebaseio.com/feeds/k.json' ]
+check 'firebase: trailing slash'           [ "$(firebase_json_url 'https://x.firebaseio.com/feeds/k/')" = 'https://x.firebaseio.com/feeds/k.json' ]
+check 'firebase: .json kept once'          [ "$(firebase_json_url 'https://x.firebaseio.com/feeds/k.json')" = 'https://x.firebaseio.com/feeds/k.json' ]
+check 'firebase: query after .json'        [ "$(firebase_json_url 'https://x.firebaseio.com/feeds/k?auth=s')" = 'https://x.firebaseio.com/feeds/k.json?auth=s' ]
+
 if [ "$fails" -eq 0 ]; then echo "all passed ($checks checks)"; else echo "$fails of $checks failed"; exit 1; fi

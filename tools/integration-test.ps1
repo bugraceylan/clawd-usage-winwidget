@@ -233,5 +233,10 @@ $threw = $false; try { Get-GistFeedText $cut | Out-Null } catch { $threw = $true
 Check 'truncated gist file is refused' $threw
 $old = $feed -replace [regex]::Escape($fresh), [DateTime]::UtcNow.AddMinutes(-5).ToString('yyyy-MM-ddTHH:mm:ssZ')
 Check 'stale feed adds nothing' ((ConvertTo-RemoteSessions $old).Count -eq 0)
+$five = [DateTime]::UtcNow.AddMinutes(-5).ToString('yyyy-MM-ddTHH:mm:ssZ')
+$twelve = [DateTime]::UtcNow.AddMinutes(-12).ToString('yyyy-MM-ddTHH:mm:ssZ')
+Check 'a 5-minute heartbeat keeps a 5-minute-old feed' ((ConvertTo-RemoteSessions "{""generatedAt"":""$five"",""heartbeat"":300,""sessions"":[{""name"":""a""}]}").Count -eq 1)
+Check 'two missed heartbeats make it stale' ((ConvertTo-RemoteSessions "{""generatedAt"":""$twelve"",""heartbeat"":300,""sessions"":[{""name"":""a""}]}").Count -eq 0)
+Check 'a short heartbeat never shortens the 2 minutes' ((ConvertTo-RemoteSessions "{""generatedAt"":""$([DateTime]::UtcNow.AddSeconds(-100).ToString('yyyy-MM-ddTHH:mm:ssZ'))"",""heartbeat"":5,""sessions"":[{""name"":""a""}]}").Count -eq 1)
 'PASS  remote sessions from a gist: addresses, file pick, staleness'
 "all passed ($script:Checked checks)"

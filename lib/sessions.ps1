@@ -49,11 +49,19 @@ $script:RemoteSess = @{}    # source -> @{ wc; task; try; at; list }
 function ConvertTo-RemoteSessions($text) {
     $j = $text | ConvertFrom-Json
     if ($j.generatedAt) {
+        # A publisher that writes rarely (a gist allows 100 writes an hour) says how often
+        # it writes at the least - heartbeat, seconds; stale after two of those missed.
+        $stale = $RemoteStaleSeconds
+        $hb = 0.0
+        if ($null -ne $j.heartbeat -and [double]::TryParse([string]$j.heartbeat, [ref]$hb) -and $hb -gt 0) {
+            $stale = [math]::Max($stale, 2 * $hb + 60)
+        }
         $age = ([datetimeoffset]::UtcNow - [datetimeoffset]::Parse([string]$j.generatedAt)).TotalSeconds
-        if ($age -gt $RemoteStaleSeconds) { return ,@() }
+        if ($age -gt $stale) { return ,@() }
     }
     $host_ = [string]$j.host
-    $items = $(if ($null -ne $j.sessions) { $j.sessions } else { $j })
+    # A feed with no sessions key has none: Firebase does not keep an empty array.
+    $items = $(if ($null -ne $j.sessions) { $j.sessions } elseif ($null -ne $j.generatedAt) { @() } else { $j })
     $list = @()
     foreach ($s in @($items)) {
         if (-not $s -or $s -is [string]) { continue }
@@ -106,6 +114,127 @@ function Get-GistFeedText([string]$text) {
     return [string]$f.content
 }
 
+# A source can also be a live feed in a Firebase Realtime Database - its address
+# (https://<db>.firebaseio.com/feeds/<key> or ...firebasedatabase.app/...), or any
+# address after "firebase:". The widget keeps a connection open to it (Server-Sent
+# Events) and Firebase pushes every change down it at once: no polling, no rate limit.
+# The connection lives in a runspace of its own, so a read that blocks never holds up
+# the window; it only drops the latest feed into a shared table. Lost - it reconnects,
+# 2 s, 4 s ... a minute apart. The feed's own generatedAt and heartbeat tell when the
+# publisher went quiet, so a dead machine drops out even while the connection is up.
+
+function Get-StreamUrl([string]$src) {
+    $u = $src
+    if ($u -match '^firebase:(.+)$') { $u = $Matches[1] }
+    elseif ($u -notmatch '^https://[^/]+\.(firebaseio\.com|firebasedatabase\.app)(/|$)') { return $null }
+    if ($u -notmatch '^https?://') { return $null }
+    # Firebase's REST address of a path is the path + .json; a query (auth=...) stays after it.
+    $q = ''
+    $i = $u.IndexOf('?')
+    if ($i -ge 0) { $q = $u.Substring($i); $u = $u.Substring(0, $i) }
+    $u = $u.TrimEnd('/')
+    if ($u -notmatch '\.json$') { $u += '.json' }
+    return $u + $q
+}
+
+$FeedStreamScript = {
+    param([string]$url, $state)
+    [System.Net.ServicePointManager]::SecurityProtocol =
+        [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+    $wait = 2
+    while (-not $state.stop) {
+        $resp = $null; $rd = $null
+        try {
+            $req = [System.Net.HttpWebRequest]::Create($url)
+            $req.Accept = 'text/event-stream'
+            $req.UserAgent = 'clawd-usage-winwidget'
+            $req.Timeout = 15000
+            $req.ReadWriteTimeout = 90000   # Firebase sends a keep-alive every 30 s
+            $state.req = $req
+            $resp = $req.GetResponse()
+            $rd = New-Object System.IO.StreamReader($resp.GetResponseStream(), [System.Text.Encoding]::UTF8)
+            $state.error = $null
+            $state.connected = $true
+            $wait = 2
+            $event = ''
+            while (-not $state.stop) {
+                $line = $rd.ReadLine()
+                if ($null -eq $line) { break }
+                if ($line.StartsWith('event:')) { $event = $line.Substring(6).Trim(); continue }
+                if (-not $line.StartsWith('data:')) { continue }
+                $state.at = [datetime]::UtcNow
+                if ($event -eq 'put' -or $event -eq 'patch') {
+                    $j = $line.Substring(5).Trim() | ConvertFrom-Json
+                    if ($event -eq 'put' -and $j.path -eq '/') {
+                        $state.text = $(if ($null -eq $j.data) { '' } else { ConvertTo-Json $j.data -Depth 10 -Compress })
+                    } else {
+                        # A change to a part of the feed: read the whole of it once.
+                        $wc = New-Object System.Net.WebClient
+                        $wc.Encoding = [System.Text.Encoding]::UTF8
+                        $state.text = $wc.DownloadString($url)
+                    }
+                    $state.version++
+                } elseif ($event -eq 'cancel' -or $event -eq 'auth_revoked') {
+                    $state.error = $event
+                    break
+                }
+            }
+        } catch {
+            $state.error = $_.Exception.Message
+        } finally {
+            $state.connected = $false
+            if ($rd) { $rd.Dispose() }
+            if ($resp) { $resp.Dispose() }
+        }
+        if ($state.stop) { break }
+        for ($i = 0; $i -lt $wait * 10 -and -not $state.stop; $i++) { Start-Sleep -Milliseconds 100 }
+        $wait = [math]::Min(60, $wait * 2)
+    }
+}
+
+# A push should show at once, not on the next refresh (refreshSeconds): twice a second
+# the window looks whether any stream brought something new and redraws if so.
+$script:FeedTimer = $null
+$script:FeedSeen  = -1
+
+function Start-FeedWatch {
+    if ($script:FeedTimer) { return }
+    $script:FeedTimer = New-Object System.Windows.Threading.DispatcherTimer
+    $script:FeedTimer.Interval = [TimeSpan]::FromMilliseconds(500)
+    $script:FeedTimer.add_Tick({
+        $sum = 0
+        foreach ($r in @($script:RemoteSess.Values)) { if ($r.stream) { $sum += [int]$r.stream.version } }
+        if ($sum -ne $script:FeedSeen) {
+            $script:FeedSeen = $sum
+            try { Update-Widget } catch {}
+        }
+    })
+    $script:FeedTimer.Start()
+}
+
+function Start-FeedStream([string]$url) {
+    Start-FeedWatch
+    $state = [hashtable]::Synchronized(@{ text = $null; version = 0; at = [datetime]::MinValue
+                                           connected = $false; error = $null; stop = $false; req = $null })
+    $ps = [powershell]::Create()
+    [void]$ps.AddScript($FeedStreamScript).AddArgument($url).AddArgument($state)
+    $state.ps = $ps
+    $state.handle = $ps.BeginInvoke()
+    return $state
+}
+
+function Stop-FeedStream($state) {
+    if (-not $state) { return }
+    $state.stop = $true
+    try { if ($state.req) { $state.req.Abort() } } catch {}
+    # BeginStop: a read that is still unwinding must not hold up the window.
+    try { [void]$state.ps.BeginStop($null, $null) } catch {}
+}
+
+function Stop-AllFeedStreams {
+    foreach ($r in @($script:RemoteSess.Values)) { Stop-FeedStream $r.stream }
+}
+
 # Collects finished fetches, starts the due ones and returns the sessions from all
 # sources that answered recently. $local - the local sessions, to drop duplicates.
 function Get-RemoteSessions($local) {
@@ -113,6 +242,7 @@ function Get-RemoteSessions($local) {
     foreach ($k in @($script:RemoteSess.Keys)) {
         if ($sources -notcontains $k) {
             try { $script:RemoteSess[$k].wc.CancelAsync() } catch {}
+            Stop-FeedStream $script:RemoteSess[$k].stream
             $script:RemoteSess.Remove($k)
         }
     }
@@ -120,7 +250,15 @@ function Get-RemoteSessions($local) {
     $out = @()
     foreach ($src in $sources) {
         $r = $script:RemoteSess[$src]
-        if (-not $r) { $r = @{ wc = $null; task = $null; try = [datetime]::MinValue; at = [datetime]::MinValue; list = @() }; $script:RemoteSess[$src] = $r }
+        if (-not $r) { $r = @{ wc = $null; task = $null; try = [datetime]::MinValue; at = [datetime]::MinValue; list = @(); stream = $null }; $script:RemoteSess[$src] = $r }
+        $live = Get-StreamUrl $src
+        if ($live) {
+            if (-not $r.stream) { $r.stream = Start-FeedStream $live }
+            # Every tick, not only on a push: a publisher gone quiet has to age out.
+            $text = $r.stream.text
+            if ($text) { try { $out += ConvertTo-RemoteSessions $text } catch {} }
+            continue
+        }
         $gist = Get-GistId $src
         if ($r.task -and $r.task.IsCompleted) {
             if ($r.task.Status -eq 'RanToCompletion') {
