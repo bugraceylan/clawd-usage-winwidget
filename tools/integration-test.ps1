@@ -193,6 +193,12 @@ Check 'shell sorts with working, before idle' (@($rows[0].name, $rows[1].name) -
 $un = @($rows | Where-Object { $_.name -eq 'odd' })[0]
 Check 'unknown status is shown as it is' ($un.text -eq 'paused')
 Check 'unknown status has the idle dot' ($un.state -eq 'idle')
+$tones = @{}; foreach ($x in $rows) { $tones[$x.name] = $x.tone }
+Check 'tones: shell, busy, idle, other' ($tones.demos -eq 'shell' -and $tones.core -eq 'busy' -and $tones.web -eq 'idle' -and $tones.odd -eq 'other')
+$w = Get-SessionRowModels @(@{ name = 'ask'; busy = $false; waiting = $true; status = 'waiting'; waitingFor = 'input needed'; sessionId = 's9' }) $t0
+Check 'tone: waiting' ($w[0].tone -eq 'waiting')
+$script:SessSince = @{}
+$rows = Get-SessionRowModels $odd $t0
 $rows = Get-SessionRowModels $odd $t0.AddMinutes(3)
 Check 'shell keeps its own clock' ((@($rows | Where-Object { $_.name -eq 'demos' })[0].text) -eq 'background task · 3m')
 $odd[0].status = 'busy'

@@ -232,6 +232,8 @@ function Get-SessionRowModels($ss, [datetime]$now = (Get-Date)) {
         $where = $(if ($s.host -and $s.cwd) { "$($s.host): $($s.cwd)" } elseif ($s.host) { [string]$s.host } else { [string]$s.cwd })
         $out += @{
             state = $r.state
+            # the colour of the dot and the state: waiting, busy, shell, idle or other
+            tone  = $(if ($r.phase -in @('waiting', 'busy', 'shell', 'idle')) { $r.phase } else { 'other' })
             name  = $name
             text  = $(if ($for) { "$word · $for" } else { $word })
             tip   = $where
@@ -240,8 +242,21 @@ function Get-SessionRowModels($ss, [datetime]$now = (Get-Date)) {
     return ,$out
 }
 
+# The dot's and the state text's colours per state. The active ones are not themed,
+# like the level colours: they mean the same in every theme. Idle (and a status the
+# widget does not know) stays in the theme's quiet greys.
+$SessionTones = @{
+    waiting = @{ dot = '#FFFCA5A5'; text = '#FFFCA5A5' }   # light red - waits for you (input, permission)
+    busy    = @{ dot = '#FF86EFAC'; text = '#FF86EFAC' }   # light green - working
+    shell   = @{ dot = '#FF16A34A'; text = '#FF16A34A' }   # dark green - a background task
+    idle    = @{ dot = '#FF52525B'; text = '#FF6B7280' }   # grey - idle
+    other   = @{ dot = '#FF52525B'; text = '#FF6B7280' }   # grey - a status the widget does not know
+}
+
 function New-SessionRow($m) {
-    $dot  = $(switch ($m.state) { 'waiting' { $Palette.warn.Wpf } 'busy' { $Palette.ok.Wpf } default { '#FF52525B' } })
+    $tone = $SessionTones[[string]$m.tone]
+    if (-not $tone) { $tone = $SessionTones.other }
+    $dot  = $tone.dot
     $g = New-Object System.Windows.Controls.Grid
     $g.Margin = New-Object System.Windows.Thickness 0, 1.5, 0, 1.5
     $g.Background = [System.Windows.Media.Brushes]::Transparent
@@ -269,7 +284,7 @@ function New-SessionRow($m) {
     $t = New-Object System.Windows.Controls.TextBlock
     $t.Text = $m.text
     $t.FontFamily = 'Segoe UI'; $t.FontSize = 9.5
-    $t.Foreground = New-Brush $(if ($m.state -eq 'waiting') { $Palette.warn.Wpf } else { '#FF6B7280' })
+    $t.Foreground = New-Brush $tone.text
     $t.Margin = New-Object System.Windows.Thickness 8, 0, 0, 0
     $t.VerticalAlignment = 'Center'
     [System.Windows.Controls.Grid]::SetColumn($t, 2)
@@ -294,7 +309,7 @@ function Update-SessionRows($ss) {
         $UI.SessionScroll.MaxHeight = $(if ($null -ne $h -and [double]$h -gt 0) { [math]::Max($SessionListMinHeight, [double]$h) }
                                          else { [double]::PositiveInfinity })
     }
-    $key = @($models | ForEach-Object { "$($_.state)|$($_.name)|$($_.text)|$($_.tip)" }) -join "`n"
+    $key = @($models | ForEach-Object { "$($_.tone)|$($_.name)|$($_.text)|$($_.tip)" }) -join "`n"
     if ($key -eq $script:SessRowsKey) { return }
     $script:SessRowsKey = $key
     $UI.SessionRows.Children.Clear()

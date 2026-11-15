@@ -128,12 +128,12 @@ function Start-AdvisorScan { }
 function Start-ClawdSession { }
 function Update-ClawdSession($ss) { }
 function Start-HistoryJob([string]$kind) { }
-function S([string]$name, [bool]$busy = $false, [string]$waitingFor = '') {
+function S([string]$name, [bool]$busy = $false, [string]$waitingFor = '', [string]$status = '') {
     return @{ name = $name; cwd = "C:\code\$name"; busy = $busy; waiting = [bool]$waitingFor; waitingFor = $waitingFor
-              sessionId = $name }
+              sessionId = $name; status = $status }
 }
 if ($isHist) { $script:FakeSessions = @((S 'clawd-usage-winwidget'), (S 'pixel-garden')) }
-else         { $script:FakeSessions = @((S 'clawd-usage-winwidget' $true), (S 'pixel-garden'), (S 'invoice-bot' $false 'permission'), (S 'dotfiles')) }
+else         { $script:FakeSessions = @((S 'clawd-usage-winwidget' $true), (S 'pixel-garden' $true '' 'shell'), (S 'invoice-bot' $false 'permission'), (S 'dotfiles')) }
 function Get-Sessions { return ,@($script:FakeSessions) }
 $script:Usage = @{
     session = [int]$sess; week = [int]$week; fable = 12
