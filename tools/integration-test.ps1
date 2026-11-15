@@ -178,27 +178,36 @@ Check 'state change restarts the clock' ((@($rows | Where-Object { $_.name -eq '
 $rows = Get-SessionRowModels @($ss[0]) $t0.AddMinutes(81)
 Check 'ended sessions are forgotten' ($script:SessSince.Count -eq 1 -and $rows.Count -eq 1)
 $script:SessSince = @{}
+# What the readers make of "shell" (a background task): busy, like the converters do.
 $odd = @(
-    @{ name = 'demos'; busy = $false; waiting = $false; status = 'shell'; sessionId = 's1' }
-    @{ name = 'core';  busy = $true;  waiting = $false; status = 'busy';  sessionId = 's2' }
-    @{ name = 'web';   busy = $false; waiting = $false; status = 'idle';  sessionId = 's3' }
+    @{ name = 'demos'; busy = $true;  waiting = $false; status = 'shell';  sessionId = 's1' }
+    @{ name = 'core';  busy = $true;  waiting = $false; status = 'busy';   sessionId = 's2' }
+    @{ name = 'web';   busy = $false; waiting = $false; status = 'idle';   sessionId = 's3' }
+    @{ name = 'odd';   busy = $false; waiting = $false; status = 'paused'; sessionId = 's4' }
 )
 $rows = Get-SessionRowModels $odd $t0
 $sh = @($rows | Where-Object { $_.name -eq 'demos' })[0]
-Check 'unknown status is shown as it is' ($sh.text -eq 'shell')
-Check 'unknown status has the idle dot' ($sh.state -eq 'idle')
-Check 'unknown status sorts with idle, after working' ($rows[0].name -eq 'core')
+Check 'shell reads as a background task' ($sh.text -eq 'background task')
+Check 'shell has the working dot' ($sh.state -eq 'busy')
+Check 'shell sorts with working, before idle' (@($rows[0].name, $rows[1].name) -contains 'demos')
+$un = @($rows | Where-Object { $_.name -eq 'odd' })[0]
+Check 'unknown status is shown as it is' ($un.text -eq 'paused')
+Check 'unknown status has the idle dot' ($un.state -eq 'idle')
 $rows = Get-SessionRowModels $odd $t0.AddMinutes(3)
-Check 'unknown status keeps its own clock' ((@($rows | Where-Object { $_.name -eq 'demos' })[0].text) -eq 'shell · 3m')
-$odd[0].status = 'idle'
+Check 'shell keeps its own clock' ((@($rows | Where-Object { $_.name -eq 'demos' })[0].text) -eq 'background task · 3m')
+$odd[0].status = 'busy'
 $rows = Get-SessionRowModels $odd $t0.AddMinutes(4)
-Check 'shell -> idle restarts the clock' ((@($rows | Where-Object { $_.name -eq 'demos' })[0].text) -eq 'idle')
+Check 'shell -> busy restarts the clock' ((@($rows | Where-Object { $_.name -eq 'demos' })[0].text) -eq 'working')
 'PASS  session rows: order, states, durations and remote hosts'
 
 . (Read-Function 'lib\sessions.ps1' 'Get-GistId')
 . (Read-Function 'lib\sessions.ps1' 'Get-GistFeedText')
 . (Read-Function 'lib\sessions.ps1' 'ConvertTo-RemoteSessions')
 $RemoteStaleSeconds = 120
+$WorkingStatuses = @('busy', 'shell')
+$shellFeed = "{""generatedAt"":""$([DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))"",""sessions"":[{""name"":""vako"",""status"":""shell""}]}"
+$shellList = ConvertTo-RemoteSessions $shellFeed
+Check 'remote shell counts as working' ($shellList[0].busy -and $shellList[0].status -eq 'shell')
 $id = 'b9535c61f6f97a4f95e5423cd9de0063'
 Check 'gist: form' ((Get-GistId "gist:$id") -eq $id)
 Check 'gist page with user' ((Get-GistId "https://gist.github.com/someone/$id") -eq $id)

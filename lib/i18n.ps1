@@ -53,6 +53,7 @@ $Strings = @{
     'sess.rowBusy'   = 'working'
     'sess.rowWait'   = 'waiting for you'
     'sess.rowIdle'   = 'idle'
+    'sess.rowShell'  = 'background task'
     'plural.session' = @('session', 'sessions')
     'plural.request' = @('request', 'requests')
 
@@ -556,6 +557,7 @@ $Strings = @{
     'sess.rowBusy'   = 'работает'
     'sess.rowWait'   = 'ждёт вас'
     'sess.rowIdle'   = 'простаивает'
+    'sess.rowShell'  = 'фоновая задача'
     'plural.session' = @('сессия', 'сессии', 'сессий')
     'plural.request' = @('запрос', 'запроса', 'запросов')
 
@@ -1086,6 +1088,7 @@ $Strings = @{
     'sess.rowBusy'   = 'en cours'
     'sess.rowWait'   = 'vous attend'
     'sess.rowIdle'   = 'inactive'
+    'sess.rowShell'  = 'tâche de fond'
     'plural.session' = @('session', 'sessions')
     'plural.request' = @('requête', 'requêtes')
 
@@ -1616,6 +1619,7 @@ $Strings = @{
     'sess.rowBusy'   = 'trabalhando'
     'sess.rowWait'   = 'esperando você'
     'sess.rowIdle'   = 'ociosa'
+    'sess.rowShell'  = 'tarefa em segundo plano'
     'plural.session' = @('sessão', 'sessões')
     'plural.request' = @('requisição', 'requisições')
 
@@ -2145,6 +2149,7 @@ $Strings = @{
     'sess.rowBusy'   = 'trabajando'
     'sess.rowWait'   = 'te espera'
     'sess.rowIdle'   = 'inactiva'
+    'sess.rowShell'  = 'tarea en segundo plano'
     'plural.session' = @('sesión', 'sesiones')
     'plural.request' = @('petición', 'peticiones')
 

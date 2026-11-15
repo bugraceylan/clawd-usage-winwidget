@@ -106,9 +106,10 @@ Settings → Personalization → Taskbar → Other system tray icons → `clawd-
   empty list when it is stopped. A session counts only while its process is
   Claude Code itself and started before its registry file was last written, so
   files left from before a reboot whose pid is now another program stay out. Its
-  name is the one given with `--remote-control <name>`, else the registry's. A
-  status other than working, waiting or idle (`shell`) is shown as it is, with a
-  grey dot. `clawd-sessions-publish.sh --dry` prints what it would write;
+  name is the one given with `--remote-control <name>`, else the registry's.
+  `shell` (a background task is running) counts as working and reads "background
+  task"; any other status the widget does not know is shown as it is, with a grey
+  dot. `clawd-sessions-publish.sh --dry` prints what it would write;
   `bash tools/publish-test.sh` checks the process and name rules. The widget reads the gist through GitHub's API
   with your `gh` login (or `githubToken` in `config.json`) every refresh;
   without any token GitHub allows 60 reads an hour, so it reads every 75 seconds.

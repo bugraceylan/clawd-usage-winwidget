@@ -6,6 +6,10 @@
 
 $SessionsDir = [System.IO.Path]::Combine((Get-ClaudeConfigDir), 'sessions')
 
+# Statuses that count as working - the summary line, Clawd's mood. "shell": the
+# session has a background task running.
+$WorkingStatuses = @('busy', 'shell')
+
 function Get-Sessions {
     $own = @()
     foreach ($p in @($script:UsageProc, $script:AuthProc)) { if ($p) { $own += $p.Id } }
@@ -23,7 +27,7 @@ function Get-Sessions {
         $name = [string]$j.name
         if (-not $name -and $j.cwd) { $name = Split-Path -Leaf $j.cwd }
         # waiting - the session waits for the user: permission, question, dialog (see waitingFor).
-        $list += @{ name = $name; cwd = [string]$j.cwd; busy = ($j.status -eq 'busy')
+        $list += @{ name = $name; cwd = [string]$j.cwd; busy = ($j.status -in $WorkingStatuses)
                     waiting = ($j.status -eq 'waiting'); waitingFor = [string]$j.waitingFor; status = [string]$j.status
                     kind = [string]$j.kind; sessionId = [string]$j.sessionId; pid = [int]$j.pid
                     started = $proc.StartTime }
@@ -56,7 +60,7 @@ function ConvertTo-RemoteSessions($text) {
         $name = [string]$s.name
         if (-not $name -and $s.cwd) { $name = Split-Path -Leaf ([string]$s.cwd) }
         if (-not $name -and $s.sessionId) { $name = ([string]$s.sessionId).Substring(0, [math]::Min(8, ([string]$s.sessionId).Length)) }
-        $list += @{ name = $name; cwd = [string]$s.cwd; busy = ($s.status -eq 'busy')
+        $list += @{ name = $name; cwd = [string]$s.cwd; busy = ($s.status -in $WorkingStatuses)
                     waiting = ($s.status -eq 'waiting'); waitingFor = [string]$s.waitingFor; status = [string]$s.status
                     kind = [string]$s.kind; sessionId = [string]$s.sessionId; pid = 0; host = $host_ }
     }
@@ -194,11 +198,14 @@ function Get-SessionRowModels($ss, [datetime]$now = (Get-Date)) {
         if (-not $s) { continue }
         $key = $(if ($s.sessionId) { [string]$s.sessionId } elseif ($s.pid) { "pid:$($s.pid)" } else { "$($s.host)/$($s.name)" })
         $state = Get-SessionState $s
-        # A status the widget does not know (Claude Code reports "shell", for one) is shown
-        # as it is, with the grey dot of an idle session; it neither works nor waits. It
-        # is its own phase for the clock, so idle -> shell starts counting anew.
+        # "shell" - a background task is running: it works (green, counted as working), but
+        # the row says what kind of work, with a clock of its own, so busy -> shell
+        # starts counting anew. A status the widget does not know at all is shown as it
+        # is, with the grey dot of an idle session; it neither works nor waits.
         $raw = ([string]$s.status).Trim()
-        $phase = $(if ($state -eq 'idle' -and $raw -and $raw -notin @('idle', 'busy', 'waiting')) { $raw } else { $state })
+        $phase = $(if ($state -eq 'busy' -and $raw -eq 'shell') { 'shell' }
+                   elseif ($state -eq 'idle' -and $raw -and $raw -notin @('idle', 'busy', 'waiting')) { $raw }
+                   else { $state })
         $since = $script:SessSince[$key]
         if (-not $since -or $since.state -ne $phase) {
             $since = @{ state = $phase; at = $now }
@@ -215,7 +222,7 @@ function Get-SessionRowModels($ss, [datetime]$now = (Get-Date)) {
         $s = $r.s
         $word = $(switch ($r.state) {
             'waiting' { if ($s.waitingFor) { [string]$s.waitingFor } else { T 'sess.rowWait' } }
-            'busy'    { T 'sess.rowBusy' }
+            'busy'    { if ($r.phase -eq 'shell') { T 'sess.rowShell' } else { T 'sess.rowBusy' } }
             default   { if ($r.phase -ne 'idle') { $r.phase } else { T 'sess.rowIdle' } }
         })
         $for = Format-Elapsed ($now - $r.at)
