@@ -124,7 +124,10 @@ function New-ChangesTooltip {
 # widget's version reads its CHANGELOG.md next to the script.
 $ChangelogPage   = 'https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md'
 $ClawdChangelog  = Join-Path $script:Root 'CHANGELOG.md'
-$ClawdChangelogPage = 'https://github.com/Enhed/clawd-usage-winwidget/blob/main/CHANGELOG.md'
+# This fork's own repository: the changelog link, the release check and the self-update
+# come only from here, never from the upstream project it was forked from.
+$ClawdRepo = 'bugraceylan/clawd-usage-winwidget'
+$ClawdChangelogPage = "https://github.com/$ClawdRepo/blob/main/CHANGELOG.md"
 
 function Open-ClawdChangelog { Start-Process $ClawdChangelogPage }
 
@@ -156,7 +159,7 @@ function New-ClawdChangesTooltip {
 # Claude Code's version. A new one: the version line in the corner turns yellow,
 # a Windows notification once per version, a click updates the files and restarts.
 
-$ReleaseApi = 'https://api.github.com/repos/Enhed/clawd-usage-winwidget/releases/latest'
+$ReleaseApi = "https://api.github.com/repos/$ClawdRepo/releases/latest"
 $UpdateStatePath = Join-Path $script:Root 'update-state.json'
 
 # A click on the update leaves a mark in TEMP, outside the widget's folder - that

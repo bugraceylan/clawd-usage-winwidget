@@ -2,22 +2,22 @@
 
 ## 1.20.0
 
-- Animated Christmas theme: falling snow, a blinking garland, a snowy house with chimney smoke, a snowman, a lit tree and Santa's sleigh. By season now selects Halloween in September and October and Christmas from November through January 14; includes all five interface languages and scene regression checks. ([bc8d469](https://github.com/Enhed/clawd-usage-winwidget/commit/bc8d469d6333a69f60d837844e7d2b191998756d))
-- Added the Antigravity and Codex versions to the ports list. ([749b963](https://github.com/Enhed/clawd-usage-winwidget/commit/749b963bedc448160a8d92cca36b5afe58f5583a))
+- Animated Christmas theme: falling snow, a blinking garland, a snowy house with chimney smoke, a snowman, a lit tree and Santa's sleigh. By season now selects Halloween in September and October and Christmas from November through January 14; includes all five interface languages and scene regression checks. ([bc8d469](https://github.com/bugraceylan/clawd-usage-winwidget/commit/bc8d469d6333a69f60d837844e7d2b191998756d))
+- Added the Antigravity and Codex versions to the ports list. ([749b963](https://github.com/bugraceylan/clawd-usage-winwidget/commit/749b963bedc448160a8d92cca36b5afe58f5583a))
 
 ## 1.19.0
 
 - Program memory tips now count private working sets instead of counting shared
-  pages repeatedly across browser processes. ([10ec478](https://github.com/Enhed/clawd-usage-winwidget/commit/10ec478a349d002e06e5421b97637c7b64620ec6))
+  pages repeatedly across browser processes. ([10ec478](https://github.com/bugraceylan/clawd-usage-winwidget/commit/10ec478a349d002e06e5421b97637c7b64620ec6))
 - Choose the session or the week as the main limit for the large number, tray
-  icon and Clawd's health and mood. ([3768564](https://github.com/Enhed/clawd-usage-winwidget/commit/3768564a7ef007cb2beaff3377e0f40de143a019))
+  icon and Clawd's health and mood. ([3768564](https://github.com/bugraceylan/clawd-usage-winwidget/commit/3768564a7ef007cb2beaff3377e0f40de143a019))
 - Brazilian Portuguese interface, reminders and task schedules. Weekday parsing
   now matches complete names or abbreviations, so duration text such as
-  "quinze minutes" cannot turn into Thursday. ([84bf79c](https://github.com/Enhed/clawd-usage-winwidget/commit/84bf79ca67d01aa0193036de76600da0b3b74784))
+  "quinze minutes" cannot turn into Thursday. ([84bf79c](https://github.com/bugraceylan/clawd-usage-winwidget/commit/84bf79ca67d01aa0193036de76600da0b3b74784))
 - Spanish interface, reminders, task schedules and README, compatible with
-  Brazilian Portuguese and the main-limit setting. ([b667bb6](https://github.com/Enhed/clawd-usage-winwidget/commit/b667bb624a5055833ee05495b37dafa492930c1c))
+  Brazilian Portuguese and the main-limit setting. ([b667bb6](https://github.com/bugraceylan/clawd-usage-winwidget/commit/b667bb624a5055833ee05495b37dafa492930c1c))
 - Offline smoke tests with a fake CLI, integration checks on fixed data and
-  screenshots in either main-limit mode without Claude Code. ([44b7ce2](https://github.com/Enhed/clawd-usage-winwidget/commit/44b7ce2fd532b299a0ccb68a38a86e99e7f3bfc5))
+  screenshots in either main-limit mode without Claude Code. ([44b7ce2](https://github.com/bugraceylan/clawd-usage-winwidget/commit/44b7ce2fd532b299a0ccb68a38a86e99e7f3bfc5))
 
 ## 1.18.0
 
@@ -27,13 +27,13 @@
   flickering windows, a tall tower with a blinking beacon, neon signs that stutter
   ("2077" on a roof) and flying cars crossing between the towers. Two skins
   go with it: Rockerboy (slicked-back hair, gold aviators, a goatee and a chrome
-  arm) and Netrunner (a dark visor with glowing cyan slits and a neural rig). ([d578697](https://github.com/Enhed/clawd-usage-winwidget/commit/d578697f5711e3e43a0653a1378c177dbed550d0))
+  arm) and Netrunner (a dark visor with glowing cyan slits and a neural rig). ([d578697](https://github.com/bugraceylan/clawd-usage-winwidget/commit/d578697f5711e3e43a0653a1378c177dbed550d0))
 
 ## 1.17.1
 
 - Text in chat messages can be selected and copied in part (Ctrl+C or right-click);
   the icon that copies the whole message moved to its bottom corner, where it is
-  at hand at the end of a long reply. ([ce83282](https://github.com/Enhed/clawd-usage-winwidget/commit/ce83282ac3f12979a05b3f8ffc524cad48c0968a))
+  at hand at the end of a long reply. ([ce83282](https://github.com/bugraceylan/clawd-usage-winwidget/commit/ce83282ac3f12979a05b3f8ffc524cad48c0968a))
 
 ## 1.17.0
 
@@ -41,14 +41,14 @@
   administrator, everything it started was elevated too. Now action commands
   and recurring tasks run with your usual rights; the chat and Clawd's actions
   stay elevated. Turned off in Settings → Window (`jobsNoAdmin`) - for commands
-  that need admin rights. ([14fbd6f](https://github.com/Enhed/clawd-usage-winwidget/commit/14fbd6f0464c39cef99a7ad9bd99a0ae2e15d0d0))
+  that need admin rights. ([14fbd6f](https://github.com/bugraceylan/clawd-usage-winwidget/commit/14fbd6f0464c39cef99a7ad9bd99a0ae2e15d0d0))
 - Clawd knows what runs with which rights: elevated, he is told his commands
   and scripts run as administrator with no UAC to stop a mistake; not elevated -
-  that system folders and services are out of reach, and where to turn it on. ([0be2e35](https://github.com/Enhed/clawd-usage-winwidget/commit/0be2e35a5ebf3d47f23a75f9907c0ed5fd64319f))
+  that system folders and services are out of reach, and where to turn it on. ([0be2e35](https://github.com/bugraceylan/clawd-usage-winwidget/commit/0be2e35a5ebf3d47f23a75f9907c0ed5fd64319f))
 - The Tasks form understands "how often" in your own words, as reminders do:
   what it doesn't know ("twice an hour in the daytime", "every morning at eight")
   goes to the small model on saving and comes back as a schedule. Days of the
-  week still can't be set. ([375d6af](https://github.com/Enhed/clawd-usage-winwidget/commit/375d6afb42671180ef619e0c88efb7fb146908a1))
+  week still can't be set. ([375d6af](https://github.com/bugraceylan/clawd-usage-winwidget/commit/375d6afb42671180ef619e0c88efb7fb146908a1))
 
 ## 1.16.0
 
