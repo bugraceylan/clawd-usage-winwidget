@@ -485,6 +485,7 @@ are picked up on the fly, no restart needed.
 | `expanded` | details expanded |
 | `showStats` / `showStatus` / `showSessions` / `showAccount` | show the corresponding block |
 | `showSessionList` | under the sessions line, one row per session: green working, yellow waiting for you, grey idle, and for how long |
+| `sessionListHeight` | height of that list; drag the window's bottom edge to set it, the rest scrolls with the wheel; double-click the edge (or empty) - all rows |
 | `remoteSessions` | sessions running on other machines: a list of URLs or file paths, or `gist:<id>`, see above |
 | `githubToken` | token for reading a `gist:` source; empty — the `gh` CLI login |
 | `showHistory` | the 7-day chart and top projects in details (off by default) |

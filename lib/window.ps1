@@ -14,7 +14,7 @@ foreach ($n in @('BtnSettings','BtnToggle','BtnHide','BtnExit','PctText','PctSig
                  'Details','LineDay','LineDay2','LineWeek7','LineWeek72','LineVersion','LineClawdVer',
                  'FableRow','FableBarBg','LineFable','BarFable',
                  'StatusRow','StatusDot','LineStatus','LineStatus2','StatsPanel',
-                 'SessionsPanel','SessionsHead','SessionRows','LineSessions','LineAccount',
+                 'SessionsPanel','SessionsHead','SessionRows','SessionScroll','ResizeGrip','ResizeMark','LineSessions','LineAccount',
                  'MascotArea','Mascot','MascotBody','MascotEyes','MascotFx','MascotSand','MascotSweat','MascotZ',
                  'MascotBubble','MascotTag','Hearts','MascotLove','MascotSoul','Sky','SkyFx',
                  'LblWeek','LblFable','LblSessions','LblDay','LblWeek7',

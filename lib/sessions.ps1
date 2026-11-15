@@ -166,7 +166,10 @@ function Get-RemoteSessions($local) {
 # notes when it first saw each state: a session already running at start counts from then.
 # Waiting first, then working, then idle; the longest in its state first.
 
-$SessionRowsMax     = 8
+# The list is as tall as sessionListHeight (the grip at the window's bottom edge sets
+# it); the rows that do not fit scroll with the mouse wheel. Empty - all the rows.
+$SessionListMinHeight = 18  # about one row
+$script:GripDrag    = $null # @{ y; h } while the grip is being dragged
 $script:SessSince   = @{}   # session key -> @{ state; at }
 $script:SessRowsKey = $null
 
@@ -274,21 +277,19 @@ function New-SessionRow($m) {
 
 # Rebuilt only when something on it changed - a tooltip being read stays open.
 function Update-SessionRows($ss) {
-    $models = Get-SessionRowModels $ss
-    $shown  = @($models | Select-Object -First $SessionRowsMax)
-    $more   = $models.Count - $shown.Count
-    $key = (@($shown | ForEach-Object { "$($_.state)|$($_.name)|$($_.text)|$($_.tip)" }) + "+$more") -join "`n"
+    $models = Get-SessionRowModels $ss   # already an array (return ,$out) - @() would wrap it again
+    $vis = $(if ($models.Count) { 'Visible' } else { 'Collapsed' })
+    $UI.SessionScroll.Visibility = $vis
+    $UI.ResizeGrip.Visibility    = $vis
+    # Mid-drag the grip owns the height.
+    if (-not $script:GripDrag) {
+        $h = $script:Cfg.sessionListHeight
+        $UI.SessionScroll.MaxHeight = $(if ($null -ne $h -and [double]$h -gt 0) { [math]::Max($SessionListMinHeight, [double]$h) }
+                                         else { [double]::PositiveInfinity })
+    }
+    $key = @($models | ForEach-Object { "$($_.state)|$($_.name)|$($_.text)|$($_.tip)" }) -join "`n"
     if ($key -eq $script:SessRowsKey) { return }
     $script:SessRowsKey = $key
     $UI.SessionRows.Children.Clear()
-    foreach ($m in $shown) { [void]$UI.SessionRows.Children.Add((New-SessionRow $m)) }
-    if ($more -gt 0) {
-        $x = New-Object System.Windows.Controls.TextBlock
-        $x.Text = (T 'sess.more') -f $more
-        $x.FontFamily = 'Segoe UI'; $x.FontSize = 9.5
-        $x.Foreground = New-Brush '#FF6B7280'
-        $x.Margin = New-Object System.Windows.Thickness 14, 1, 0, 0
-        [void]$UI.SessionRows.Children.Add($x)
-    }
-    $UI.SessionRows.Visibility = $(if ($shown.Count) { 'Visible' } else { 'Collapsed' })
+    foreach ($m in $models) { [void]$UI.SessionRows.Children.Add((New-SessionRow $m)) }
 }

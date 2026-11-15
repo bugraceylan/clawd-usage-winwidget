@@ -18,6 +18,7 @@ $DefaultConfig = [ordered]@{
     statusIntervalSeconds  = 120    # how often to query status.claude.com
     showSessions           = $true  # running Claude Code sessions
     showSessionList        = $true  # one row per session under the sessions line: state and for how long
+    sessionListHeight      = $null  # height of that list (drag the window's bottom edge; the rest scrolls); empty - all rows
     remoteSessions         = @()    # URLs, file paths or gist:<id> with sessions running on other machines (see README)
     githubToken            = $null  # token for reading a gist in remoteSessions; empty - the gh CLI's login, else 60 reads/hour
     showAccount            = $true  # account plan and email at the bottom of the window

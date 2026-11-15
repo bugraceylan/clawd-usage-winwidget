@@ -11,6 +11,40 @@ $border.add_MouseLeftButtonDown({
         Save-Config $script:Cfg
     } catch {}
 })
+
+# The bottom edge: drag down for a taller session list, up for a shorter one; pulled
+# past the last row or double-clicked - all the rows again, growing with new sessions.
+# Measured against the sessions block, whose top stays put: its units are the
+# window's before scaling, so the drag follows the mouse at any scale.
+$UI.ResizeGrip.add_MouseLeftButtonDown({
+    param($s, $e)
+    $e.Handled = $true   # not a window drag
+    if ($e.ClickCount -ge 2) { $script:GripDrag = $null; Set-Setting 'sessionListHeight' $null; return }
+    $script:GripDrag = @{ y = $e.GetPosition($UI.SessionsPanel).Y; h = $UI.SessionScroll.ActualHeight }
+    [void]$UI.ResizeGrip.CaptureMouse()
+})
+$UI.ResizeGrip.add_MouseMove({
+    param($s, $e)
+    $d = $script:GripDrag
+    if (-not $d) { return }
+    $UI.SessionScroll.MaxHeight = [math]::Max($SessionListMinHeight, $d.h + $e.GetPosition($UI.SessionsPanel).Y - $d.y)
+})
+$UI.ResizeGrip.add_MouseLeftButtonUp({
+    param($s, $e)
+    if (-not $script:GripDrag) { return }
+    $e.Handled = $true
+    $script:GripDrag = $null
+    $UI.ResizeGrip.ReleaseMouseCapture()
+    $h = [math]::Round($UI.SessionScroll.MaxHeight)
+    Set-Setting 'sessionListHeight' $(if ($h -ge $UI.SessionRows.ActualHeight) { $null } else { $h })
+})
+# Capture taken away (another window, Esc): back to the saved height.
+$UI.ResizeGrip.add_LostMouseCapture({
+    if ($script:GripDrag) { $script:GripDrag = $null; Update-Widget }
+})
+$UI.ResizeGrip.add_MouseEnter({ $UI.ResizeMark.Background = New-Brush '#FF6B7280' })
+$UI.ResizeGrip.add_MouseLeave({ $UI.ResizeMark.Background = New-Brush '#FF3F3F46' })
+
 function Set-Details([bool]$open) {
     if ($open) {
         $UI.Details.Visibility = 'Visible'

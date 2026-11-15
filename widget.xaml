@@ -189,7 +189,11 @@
           <TextBlock x:Name="LineSessions" Grid.Column="1" Text="" FontFamily="Segoe UI" FontSize="10"
                      Foreground="#FF8B8B94" TextAlignment="Right" TextTrimming="CharacterEllipsis"/>
         </Grid>
-        <StackPanel x:Name="SessionRows" Margin="0,4,0,0" Visibility="Collapsed"/>
+        <!-- as tall as the grip at the bottom edge makes it (sessionListHeight); the rest scrolls -->
+        <ScrollViewer x:Name="SessionScroll" Margin="0,4,0,0" Visibility="Collapsed"
+                      VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel x:Name="SessionRows"/>
+        </ScrollViewer>
       </StackPanel>
 
       <Grid Margin="0,7,0,0">
@@ -202,6 +206,13 @@
         <TextBlock x:Name="LineStamp" Grid.Column="1" Text="" FontFamily="Segoe UI" FontSize="9"
                    Foreground="#FF52525B"/>
       </Grid>
+
+      <!-- the bottom edge: drag to make the session list taller or shorter, double-click for all of it -->
+      <Border x:Name="ResizeGrip" Height="9" Margin="-12,2,-12,-11" Background="Transparent"
+              Cursor="SizeNS" Visibility="Collapsed">
+        <Border x:Name="ResizeMark" Width="30" Height="3" CornerRadius="1.5" Background="#FF3F3F46"
+                HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+      </Border>
     </StackPanel>
   </Border>
 </Window>

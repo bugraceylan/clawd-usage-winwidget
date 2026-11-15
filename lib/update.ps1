@@ -229,6 +229,7 @@ function Update-Widget {
 
     if (-not $script:Cfg.showSessions) {
         $UI.SessionsPanel.Visibility = 'Collapsed'
+        $UI.ResizeGrip.Visibility    = 'Collapsed'
     } else {
         $UI.SessionsPanel.Visibility = 'Visible'
         $busy = @($ss | Where-Object { $_.busy })
