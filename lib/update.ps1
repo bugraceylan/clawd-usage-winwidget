@@ -47,6 +47,7 @@ function Update-Texts {
     Update-SkyTip
     $script:VerTipKey = $null
     $script:SessTip   = $null
+    $script:SessRowsKey = $null
     $script:ClawdVerKey = $null
     Update-Widget
 }
@@ -241,15 +242,18 @@ function Update-Widget {
             if ($wait.Count) { $line += "  ·  $((T 'sess.wait') -f $wait.Count)" }
             $UI.LineSessions.Text = $line
         }
-        $tip = ($ss | ForEach-Object {
+        # The list of rows under the line; with it shown the hover list would only repeat it.
+        $list = [bool]$script:Cfg.showSessionList
+        Update-SessionRows $(if ($list) { $ss } else { @() })
+        $tip = $(if ($list) { '' } else { ($ss | ForEach-Object {
             $mark = $(if ($_.busy) { '▶' } elseif ($_.waiting) { '?' } else { '○' })
             $what = $(if ($_.waiting -and $_.waitingFor) { " [$($_.waitingFor)]" } else { '' })
             $where = $(if ($_.host -and $_.cwd) { "$($_.host): $($_.cwd)" } elseif ($_.host) { $_.host } else { $_.cwd })
             "$mark $($_.name)$what — $where"
-        }) -join "`n"
+        }) -join "`n" })
         if ($tip -ne $script:SessTip) {
             $script:SessTip = $tip
-            $UI.SessionsPanel.ToolTip = $(if ($tip) { $tip } else { $null })
+            $UI.SessionsHead.ToolTip = $(if ($tip) { $tip } else { $null })
         }
     }
 

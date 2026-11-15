@@ -21,7 +21,7 @@
 Нужны Windows 10/11 и установленный, залогиненный [Claude Code](https://docs.claude.com/en/docs/claude-code).
 
 ```powershell
-git clone https://github.com/Enhed/clawd-usage-winwidget.git
+git clone https://github.com/bugraceylan/clawd-usage-winwidget.git
 ```
 
 или скачать ZIP и распаковать куда угодно. Дальше — двойной клик по `start-widget.vbs` (тихо, без мелькания консоли).
@@ -479,7 +479,7 @@ Current week (Fable): 0% used · resets Sep 21, 6am (Europe/Moscow)
 которому номер последнего релиза узнаёт официальный установщик
 (`https://claude.ai/install.ps1`). Если в `~/.claude/settings.json` задан
 `autoUpdatesChannel: "stable"`, спрашивается `…/stable`. Тогда же — последний
-релиз самого виджета: `api.github.com/repos/Enhed/clawd-usage-winwidget/releases/latest`.
+релиз самого виджета: `api.github.com/repos/bugraceylan/clawd-usage-winwidget/releases/latest`.
 
 **Статус сервисов — раз в 2 минуты:** `https://status.claude.com/api/v2/summary.json`,
 официальная страница статуса Anthropic. Запрос асинхронный.
@@ -513,7 +513,8 @@ Current week (Fable): 0% used · resets Sep 21, 6am (Europe/Moscow)
 | `showStatus` | показывать строку статуса сервисов |
 | `statusIntervalSeconds` | период опроса status.claude.com, сек |
 | `showSessions` | показывать блок сессий Claude Code |
-| `remoteSessions` | сессии на других машинах: список URL или путей к файлам, см. ниже |
+| `showSessionList` | под строкой сессий — по строке на каждую: зелёная работает, жёлтая ждёт вас, серая простаивает, и сколько уже |
+| `remoteSessions` | сессии на других машинах: список URL, путей к файлам или `gist:<id>` (настройка — в английском README) |
 | `showAccount` | показывать план и почту внизу окна |
 | `accountIntervalSeconds` | период опроса `claude auth status`, сек |
 | `showMascot` | анимированный Clawd над полосой сессии (см. ниже) |

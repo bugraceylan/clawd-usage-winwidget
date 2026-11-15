@@ -34,7 +34,7 @@ Requisitos: Windows 10/11 y [Claude Code](https://docs.claude.com/en/docs/claude
 instalado y con la sesión iniciada (`claude` en el `PATH`).
 
 ```powershell
-git clone https://github.com/Enhed/clawd-usage-winwidget.git
+git clone https://github.com/bugraceylan/clawd-usage-winwidget.git
 ```
 
 o descarga el ZIP y descomprímelo donde quieras. Después haz doble clic en
@@ -451,7 +451,7 @@ Control, y el hilo la sigue.
 | cuenta | `claude auth status` | cada 10 min |
 | última versión | `downloads.claude.ai/claude-code-releases/latest` (o `stable` si así lo indica `autoUpdatesChannel`): la misma URL que usa el instalador oficial | cada hora |
 | registro de cambios | `raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md` | solo cuando hay una actualización |
-| versión del widget | `api.github.com/repos/Enhed/clawd-usage-winwidget/releases/latest` | cada hora |
+| versión del widget | `api.github.com/repos/bugraceylan/clawd-usage-winwidget/releases/latest` | cada hora |
 | estado | `status.claude.com/api/v2/summary.json` | cada 2 min |
 | tiempo | Open-Meteo / met.no, ubicación con ipwho.is | cada 15 min |
 
@@ -485,7 +485,8 @@ reiniciar.
 | `warnPercent` / `critPercent` | umbrales amarillo y rojo |
 | `expanded` | detalles desplegados |
 | `showStats` / `showStatus` / `showSessions` / `showAccount` | mostrar el bloque correspondiente |
-| `remoteSessions` | sesiones que se ejecutan en otras máquinas: una lista de URLs o rutas de archivo, ver arriba |
+| `showSessionList` | bajo la línea de sesiones, una fila por sesión: verde trabajando, amarilla te espera, gris inactiva, y desde cuándo |
+| `remoteSessions` | sesiones que se ejecutan en otras máquinas: una lista de URLs, rutas de archivo o `gist:<id>` (configuración en el README en inglés) |
 | `showHistory` | el gráfico de 7 días y los proyectos principales en los detalles (desactivado por defecto) |
 | `showMascot` / `showSky` | Clawd y el cielo detrás de él |
 | `theme` | `auto` (según la estación: `halloween` en septiembre–octubre, `christmas` de noviembre al 14 de enero, `classic` el resto), `classic`, `midnight`, `mocha`, `oled`, `forest`, `halloween`, `space`, `ocean`, `christmas`, `cyberpunk` (también en los ajustes) |

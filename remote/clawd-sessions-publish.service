@@ -1,0 +1,12 @@
+[Unit]
+Description=Publish Claude Code sessions to a gist for clawd-usage-winwidget
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=%h/.local/bin/clawd-sessions-publish.sh
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=default.target

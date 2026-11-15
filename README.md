@@ -30,7 +30,7 @@ Requirements: Windows 10/11 and [Claude Code](https://docs.claude.com/en/docs/cl
 installed and logged in (`claude` on `PATH`).
 
 ```powershell
-git clone https://github.com/Enhed/clawd-usage-winwidget.git
+git clone https://github.com/bugraceylan/clawd-usage-winwidget.git
 ```
 
 or download the ZIP and unpack it anywhere. Then double-click `start-widget.vbs`
@@ -79,6 +79,34 @@ Settings → Personalization → Taskbar → Other system tray icons → `clawd-
   The publisher lists only live sessions; `cwd` is optional. They count for the
   line and for Clawd and show the `host` in the hover list. A source that
   fails, hangs or has a `generatedAt` older than two minutes adds nothing.
+
+  **A Linux machine on another network** — through a secret GitHub gist, no
+  open ports needed. The machine writes its sessions to the gist, the widget
+  reads them back:
+
+  1. Create the gist once, from any computer with the GitHub CLI:
+     ```bash
+     echo '{"sessions":[]}' > sessions.json && gh gist create sessions.json
+     ```
+     (`gh gist create` makes a secret gist: unlisted, readable by its address.)
+  2. On the Linux machine (needs `curl`, `jq` and systemd), with a GitHub token
+     that may write gists (a classic token with only the `gist` scope, or a
+     fine-grained one with *Gists: read and write*):
+     ```bash
+     git clone https://github.com/bugraceylan/clawd-usage-winwidget.git
+     cd clawd-usage-winwidget/remote && ./install-linux.sh <gist-id> HQ2
+     ```
+     It asks for the token, keeps it in `~/.config/clawd-publish/env` (mode
+     600), writes the gist once as a check and starts the
+     `clawd-sessions-publish` user service. For it to run while you are logged
+     out and start at boot: `sudo loginctl enable-linger $USER`.
+  3. In the widget's `config.json`: `"remoteSessions": ["gist:<gist-id>"]`.
+
+  The service writes when a session changes and every 45 seconds anyway, and an
+  empty list when it is stopped. The widget reads the gist through GitHub's API
+  with your `gh` login (or `githubToken` in `config.json`) every refresh;
+  without any token GitHub allows 60 reads an hour, so it reads every 75 seconds.
+  Every write is a new revision of the gist; delete the gist to clear its history.
 - **Service status** — green "All Claude systems operational", or yellow/red
   with the active incident and affected components. Click opens
   status.claude.com.
@@ -418,7 +446,7 @@ a new conversation there and hides the phone conversation so far; on the phone
 | account | `claude auth status` | every 10 min |
 | latest version | `downloads.claude.ai/claude-code-releases/latest` (or `stable` if `autoUpdatesChannel` says so) — the same URL the official installer uses | hourly |
 | changelog | `raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md` | only when an update is available |
-| widget release | `api.github.com/repos/Enhed/clawd-usage-winwidget/releases/latest` | hourly |
+| widget release | `api.github.com/repos/bugraceylan/clawd-usage-winwidget/releases/latest` | hourly |
 | status | `status.claude.com/api/v2/summary.json` | every 2 min |
 | weather | Open-Meteo / met.no, location via ipwho.is | every 15 min |
 
@@ -450,7 +478,9 @@ are picked up on the fly, no restart needed.
 | `warnPercent` / `critPercent` | yellow and red thresholds |
 | `expanded` | details expanded |
 | `showStats` / `showStatus` / `showSessions` / `showAccount` | show the corresponding block |
-| `remoteSessions` | sessions running on other machines: a list of URLs or file paths, see below |
+| `showSessionList` | under the sessions line, one row per session: green working, yellow waiting for you, grey idle, and for how long |
+| `remoteSessions` | sessions running on other machines: a list of URLs or file paths, or `gist:<id>`, see above |
+| `githubToken` | token for reading a `gist:` source; empty — the `gh` CLI login |
 | `showHistory` | the 7-day chart and top projects in details (off by default) |
 | `showMascot` / `showSky` | Clawd and the sky behind him |
 | `theme` | `auto` (by season: `halloween` in September–October, `christmas` from November through January 14, `classic` otherwise), `classic`, `midnight`, `mocha`, `oled`, `forest`, `halloween`, `space`, `ocean`, `christmas`, `cyberpunk` (also in Settings) |

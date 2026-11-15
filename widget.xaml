@@ -110,19 +110,6 @@
                 Background="#FFA78BFA" Width="0"/>
       </Border>
 
-      <StackPanel x:Name="SessionsPanel" Margin="0,10,0,0" Background="Transparent" ToolTipService.ShowDuration="60000">
-        <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-          </Grid.ColumnDefinitions>
-          <TextBlock x:Name="LblSessions" Text="SESSIONS" FontFamily="Segoe UI" FontSize="9"
-                     FontWeight="SemiBold" Foreground="#FF6B7280" Margin="0,0,8,0"/>
-          <TextBlock x:Name="LineSessions" Grid.Column="1" Text="" FontFamily="Segoe UI" FontSize="10"
-                     Foreground="#FF8B8B94" TextAlignment="Right" TextTrimming="CharacterEllipsis"/>
-        </Grid>
-      </StackPanel>
-
       <Grid x:Name="StatusRow" Margin="0,10,0,0" Cursor="Hand" Background="Transparent"
             ToolTip="Open status.claude.com">
         <Grid.ColumnDefinitions>
@@ -187,6 +174,22 @@
                      Foreground="#FF6B7280" Margin="8,0,0,0" Background="Transparent"
                      Cursor="Hand" ToolTipService.ShowDuration="60000"/>
         </Grid>
+      </StackPanel>
+
+      <!-- running sessions at the bottom: the summary line and one row per session -->
+      <StackPanel x:Name="SessionsPanel" Margin="0,10,0,0">
+        <Border Background="#1AFFFFFF" Height="1" Margin="0,0,0,7"/>
+        <Grid x:Name="SessionsHead" Background="Transparent" ToolTipService.ShowDuration="60000">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          <TextBlock x:Name="LblSessions" Text="SESSIONS" FontFamily="Segoe UI" FontSize="9"
+                     FontWeight="SemiBold" Foreground="#FF6B7280" Margin="0,0,8,0"/>
+          <TextBlock x:Name="LineSessions" Grid.Column="1" Text="" FontFamily="Segoe UI" FontSize="10"
+                     Foreground="#FF8B8B94" TextAlignment="Right" TextTrimming="CharacterEllipsis"/>
+        </Grid>
+        <StackPanel x:Name="SessionRows" Margin="0,4,0,0" Visibility="Collapsed"/>
       </StackPanel>
 
       <Grid Margin="0,7,0,0">

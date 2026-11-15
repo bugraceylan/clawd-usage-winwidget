@@ -150,4 +150,57 @@ Check 'unchanged data does not celebrate again' ($script:Acts.Count -eq 1)
 Set-MascotMood @() $null
 Check 'missing usage clears percentage' ($null -eq $script:Mz.pct -and -not $script:Mz.crit)
 'PASS  switching, heart baseline, exhausted limit and weekly reset'
+
+. (Read-Function 'lib\sessions.ps1' 'Get-SessionState')
+. (Read-Function 'lib\sessions.ps1' 'Format-Elapsed')
+. (Read-Function 'lib\sessions.ps1' 'Get-SessionRowModels')
+$script:Cfg.language = 'en'
+$script:SessSince = @{}
+$t0 = [datetime]'2026-11-15 12:00'
+$ss = @(
+    @{ name = 'api'; cwd = 'C:\src\api'; busy = $false; waiting = $false; sessionId = 'a' }
+    @{ name = 'web'; cwd = 'C:\src\web'; busy = $true;  waiting = $false; sessionId = 'b' }
+    @{ name = 'ops'; cwd = 'C:\src\ops'; busy = $false; waiting = $true; waitingFor = 'permission'; sessionId = 'c' }
+    @{ name = 'nas'; cwd = '/srv'; busy = $true; waiting = $false; sessionId = 'd'; host = 'unraid' }
+)
+$rows = Get-SessionRowModels $ss $t0
+Check 'one row per session' ($rows.Count -eq 4)
+Check 'waiting first, idle last' ($rows[0].name -eq 'ops' -and $rows[3].name -eq 'api')
+Check 'waiting shows what for' ($rows[0].text -eq 'permission')
+Check 'fresh state has no duration' ($rows[1].text -eq 'working')
+Check 'remote row names its host' (@($rows | Where-Object { $_.name -eq 'nas @unraid' }).Count -eq 1)
+Check 'remote tooltip has host and folder' (@($rows | Where-Object { $_.tip -eq 'unraid: /srv' }).Count -eq 1)
+$rows = Get-SessionRowModels $ss $t0.AddMinutes(75)
+Check 'duration in the same state' ((@($rows | Where-Object { $_.name -eq 'web' })[0].text) -eq 'working · 1h 15m')
+$ss[1].busy = $false
+$rows = Get-SessionRowModels $ss $t0.AddMinutes(80)
+Check 'state change restarts the clock' ((@($rows | Where-Object { $_.name -eq 'web' })[0].text) -eq 'idle')
+$rows = Get-SessionRowModels @($ss[0]) $t0.AddMinutes(81)
+Check 'ended sessions are forgotten' ($script:SessSince.Count -eq 1 -and $rows.Count -eq 1)
+'PASS  session rows: order, states, durations and remote hosts'
+
+. (Read-Function 'lib\sessions.ps1' 'Get-GistId')
+. (Read-Function 'lib\sessions.ps1' 'Get-GistFeedText')
+. (Read-Function 'lib\sessions.ps1' 'ConvertTo-RemoteSessions')
+$RemoteStaleSeconds = 120
+$id = 'b9535c61f6f97a4f95e5423cd9de0063'
+Check 'gist: form' ((Get-GistId "gist:$id") -eq $id)
+Check 'gist page with user' ((Get-GistId "https://gist.github.com/someone/$id") -eq $id)
+Check 'gist page without user' ((Get-GistId "https://gist.github.com/$id/") -eq $id)
+Check 'plain URL is not a gist' ($null -eq (Get-GistId 'http://nas:8787/sessions.json'))
+Check 'file path is not a gist' ($null -eq (Get-GistId 'C:\feeds\sessions.json'))
+$fresh = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+$feed = "{""generatedAt"":""$fresh"",""host"":""hq2"",""sessions"":[{""name"":""lima"",""status"":""waiting"",""waitingFor"":""permission"",""sessionId"":""x""}]}"
+$api = @{ id = $id; files = [ordered]@{ 'notes.md' = @{ filename = 'notes.md'; content = 'hi'; truncated = $false }
+                                        'sessions.json' = @{ filename = 'sessions.json'; content = $feed; truncated = $false } } } |
+       ConvertTo-Json -Depth 5
+Check 'gist picks sessions.json among files' ((Get-GistFeedText $api) -eq $feed)
+$list = ConvertTo-RemoteSessions (Get-GistFeedText $api)
+Check 'gist feed becomes a remote session' ($list.Count -eq 1 -and $list[0].host -eq 'hq2' -and $list[0].waiting -and $list[0].waitingFor -eq 'permission')
+$cut = @{ files = @{ 'sessions.json' = @{ filename = 'sessions.json'; content = '{'; truncated = $true } } } | ConvertTo-Json -Depth 5
+$threw = $false; try { Get-GistFeedText $cut | Out-Null } catch { $threw = $true }
+Check 'truncated gist file is refused' $threw
+$old = $feed -replace [regex]::Escape($fresh), [DateTime]::UtcNow.AddMinutes(-5).ToString('yyyy-MM-ddTHH:mm:ssZ')
+Check 'stale feed adds nothing' ((ConvertTo-RemoteSessions $old).Count -eq 0)
+'PASS  remote sessions from a gist: addresses, file pick, staleness'
 "all passed ($script:Checked checks)"
