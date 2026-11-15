@@ -1,5 +1,5 @@
 [Unit]
-Description=Publish Claude Code sessions to a gist for clawd-usage-winwidget
+Description=Publish Claude Code sessions for clawd-usage-winwidget (Firebase or gist)
 Wants=network-online.target
 After=network-online.target
 
