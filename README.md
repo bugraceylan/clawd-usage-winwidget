@@ -103,7 +103,13 @@ Settings → Personalization → Taskbar → Other system tray icons → `clawd-
   3. In the widget's `config.json`: `"remoteSessions": ["gist:<gist-id>"]`.
 
   The service writes when a session changes and every 45 seconds anyway, and an
-  empty list when it is stopped. The widget reads the gist through GitHub's API
+  empty list when it is stopped. A session counts only while its process is
+  Claude Code itself and started before its registry file was last written, so
+  files left from before a reboot whose pid is now another program stay out. Its
+  name is the one given with `--remote-control <name>`, else the registry's. A
+  status other than working, waiting or idle (`shell`) is shown as it is, with a
+  grey dot. `clawd-sessions-publish.sh --dry` prints what it would write;
+  `bash tools/publish-test.sh` checks the process and name rules. The widget reads the gist through GitHub's API
   with your `gh` login (or `githubToken` in `config.json`) every refresh;
   without any token GitHub allows 60 reads an hour, so it reads every 75 seconds.
   Every write is a new revision of the gist; delete the gist to clear its history.

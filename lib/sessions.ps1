@@ -24,7 +24,7 @@ function Get-Sessions {
         if (-not $name -and $j.cwd) { $name = Split-Path -Leaf $j.cwd }
         # waiting - the session waits for the user: permission, question, dialog (see waitingFor).
         $list += @{ name = $name; cwd = [string]$j.cwd; busy = ($j.status -eq 'busy')
-                    waiting = ($j.status -eq 'waiting'); waitingFor = [string]$j.waitingFor
+                    waiting = ($j.status -eq 'waiting'); waitingFor = [string]$j.waitingFor; status = [string]$j.status
                     kind = [string]$j.kind; sessionId = [string]$j.sessionId; pid = [int]$j.pid
                     started = $proc.StartTime }
     }
@@ -57,7 +57,7 @@ function ConvertTo-RemoteSessions($text) {
         if (-not $name -and $s.cwd) { $name = Split-Path -Leaf ([string]$s.cwd) }
         if (-not $name -and $s.sessionId) { $name = ([string]$s.sessionId).Substring(0, [math]::Min(8, ([string]$s.sessionId).Length)) }
         $list += @{ name = $name; cwd = [string]$s.cwd; busy = ($s.status -eq 'busy')
-                    waiting = ($s.status -eq 'waiting'); waitingFor = [string]$s.waitingFor
+                    waiting = ($s.status -eq 'waiting'); waitingFor = [string]$s.waitingFor; status = [string]$s.status
                     kind = [string]$s.kind; sessionId = [string]$s.sessionId; pid = 0; host = $host_ }
     }
     return ,$list
@@ -191,13 +191,18 @@ function Get-SessionRowModels($ss, [datetime]$now = (Get-Date)) {
         if (-not $s) { continue }
         $key = $(if ($s.sessionId) { [string]$s.sessionId } elseif ($s.pid) { "pid:$($s.pid)" } else { "$($s.host)/$($s.name)" })
         $state = Get-SessionState $s
+        # A status the widget does not know (Claude Code reports "shell", for one) is shown
+        # as it is, with the grey dot of an idle session; it neither works nor waits. It
+        # is its own phase for the clock, so idle -> shell starts counting anew.
+        $raw = ([string]$s.status).Trim()
+        $phase = $(if ($state -eq 'idle' -and $raw -and $raw -notin @('idle', 'busy', 'waiting')) { $raw } else { $state })
         $since = $script:SessSince[$key]
-        if (-not $since -or $since.state -ne $state) {
-            $since = @{ state = $state; at = $now }
+        if (-not $since -or $since.state -ne $phase) {
+            $since = @{ state = $phase; at = $now }
             $script:SessSince[$key] = $since
         }
         $seen[$key] = $true
-        $rows += @{ s = $s; state = $state; at = $since.at }
+        $rows += @{ s = $s; state = $state; phase = $phase; at = $since.at }
     }
     foreach ($k in @($script:SessSince.Keys)) { if (-not $seen[$k]) { $script:SessSince.Remove($k) } }
 
@@ -208,7 +213,7 @@ function Get-SessionRowModels($ss, [datetime]$now = (Get-Date)) {
         $word = $(switch ($r.state) {
             'waiting' { if ($s.waitingFor) { [string]$s.waitingFor } else { T 'sess.rowWait' } }
             'busy'    { T 'sess.rowBusy' }
-            default   { T 'sess.rowIdle' }
+            default   { if ($r.phase -ne 'idle') { $r.phase } else { T 'sess.rowIdle' } }
         })
         $for = Format-Elapsed ($now - $r.at)
         $name = [string]$s.name

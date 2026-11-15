@@ -177,6 +177,22 @@ $rows = Get-SessionRowModels $ss $t0.AddMinutes(80)
 Check 'state change restarts the clock' ((@($rows | Where-Object { $_.name -eq 'web' })[0].text) -eq 'idle')
 $rows = Get-SessionRowModels @($ss[0]) $t0.AddMinutes(81)
 Check 'ended sessions are forgotten' ($script:SessSince.Count -eq 1 -and $rows.Count -eq 1)
+$script:SessSince = @{}
+$odd = @(
+    @{ name = 'demos'; busy = $false; waiting = $false; status = 'shell'; sessionId = 's1' }
+    @{ name = 'core';  busy = $true;  waiting = $false; status = 'busy';  sessionId = 's2' }
+    @{ name = 'web';   busy = $false; waiting = $false; status = 'idle';  sessionId = 's3' }
+)
+$rows = Get-SessionRowModels $odd $t0
+$sh = @($rows | Where-Object { $_.name -eq 'demos' })[0]
+Check 'unknown status is shown as it is' ($sh.text -eq 'shell')
+Check 'unknown status has the idle dot' ($sh.state -eq 'idle')
+Check 'unknown status sorts with idle, after working' ($rows[0].name -eq 'core')
+$rows = Get-SessionRowModels $odd $t0.AddMinutes(3)
+Check 'unknown status keeps its own clock' ((@($rows | Where-Object { $_.name -eq 'demos' })[0].text) -eq 'shell · 3m')
+$odd[0].status = 'idle'
+$rows = Get-SessionRowModels $odd $t0.AddMinutes(4)
+Check 'shell -> idle restarts the clock' ((@($rows | Where-Object { $_.name -eq 'demos' })[0].text) -eq 'idle')
 'PASS  session rows: order, states, durations and remote hosts'
 
 . (Read-Function 'lib\sessions.ps1' 'Get-GistId')
