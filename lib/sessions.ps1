@@ -246,7 +246,7 @@ function Get-SessionRowModels($ss, [datetime]$now = (Get-Date)) {
 # like the level colours: they mean the same in every theme. Idle (and a status the
 # widget does not know) stays in the theme's quiet greys.
 $SessionTones = @{
-    waiting = @{ dot = '#FFFCA5A5'; text = '#FFFCA5A5' }   # light red - waits for you (input, permission)
+    waiting = @{ dot = '#FFFF3B3B'; text = '#FFFF3B3B'; bold = $true }   # bright red, bold - waits for you (input, permission)
     busy    = @{ dot = '#FF86EFAC'; text = '#FF86EFAC' }   # light green - working
     shell   = @{ dot = '#FF16A34A'; text = '#FF16A34A' }   # dark green - a background task
     idle    = @{ dot = '#FF52525B'; text = '#FF6B7280' }   # grey - idle
@@ -285,6 +285,7 @@ function New-SessionRow($m) {
     $t.Text = $m.text
     $t.FontFamily = 'Segoe UI'; $t.FontSize = 9.5
     $t.Foreground = New-Brush $tone.text
+    if ($tone.bold) { $t.FontWeight = 'SemiBold' }
     $t.Margin = New-Object System.Windows.Thickness 8, 0, 0, 0
     $t.VerticalAlignment = 'Center'
     [System.Windows.Controls.Grid]::SetColumn($t, 2)
