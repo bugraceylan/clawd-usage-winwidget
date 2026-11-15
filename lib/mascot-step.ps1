@@ -30,6 +30,13 @@ function Step-MascotDemo {
     }
 }
 
+# Running speed for n working sessions: one - as before, each more adds 30%, at most 3x.
+function Get-MascotRush($n) {
+    $n = [int]$n
+    if ($n -le 1) { return 1.0 }
+    return [math]::Min(3.0, 1.0 + 0.3 * ($n - 1))
+}
+
 function Step-Mascot {
     $m = $script:Mz
     $m.tick++
@@ -111,7 +118,9 @@ function Step-Mascot {
             }
             default {
                 if ($mood -eq 'work') {
-                    $speed = 1.6 * $tier.speed
+                    # The more sessions are working (here and on other machines), the faster he runs.
+                    $rush  = Get-MascotRush $m.busy
+                    $speed = 1.6 * $tier.speed * $rush
                     # Runs from edge to edge.
                     if ($null -eq $m.target) { $m.target = $(if ($m.dir -gt 0) { $span } else { 0.0 }) }
                 } else {
@@ -139,7 +148,7 @@ function Step-Mascot {
                 }
                 if ($walking) {
                     # The less energy, the slower the steps.
-                    $step = $(if ($mood -eq 'work') { 2 } else { 3 })
+                    $step = $(if ($mood -ne 'work') { 3 } elseif ($rush -ge 1.8) { 1 } else { 2 })
                     if ($tier.speed -lt 0.8) { $step++ }
                     if ($tier.speed -lt 0.5) { $step++ }
                     $f.feet = $(if ([math]::Floor($m.tick / $step) % 2) { 'left' } else { 'right' })
