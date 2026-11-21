@@ -223,6 +223,7 @@ function Update-Widget {
     Update-Tasks
     Update-Actions
     Update-RemoteFeed
+    Sync-SysLoad
     Update-Badge
     if ($advWin.IsVisible) { Update-Panel }
     Update-Settings

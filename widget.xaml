@@ -110,6 +110,51 @@
                 Background="#FFA78BFA" Width="0"/>
       </Border>
 
+      <!-- this computer's load: CPU, RAM and GPU memory side by side (lib\sysload.ps1) -->
+      <StackPanel x:Name="SysPanel" Margin="0,10,0,0" Visibility="Collapsed" Background="Transparent"
+                  ToolTipService.ShowDuration="60000">
+        <Border Background="#1AFFFFFF" Height="1" Margin="0,0,0,7"/>
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="10"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="10"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0">
+            <Grid>
+              <TextBlock Text="CPU" FontFamily="Segoe UI" FontSize="9" FontWeight="SemiBold" Foreground="#FF6B7280"/>
+              <TextBlock x:Name="LineCpu" Text="--" FontFamily="Segoe UI" FontSize="10" Foreground="#FFD4D4D8"
+                         HorizontalAlignment="Right"/>
+            </Grid>
+            <Border Background="#26FFFFFF" CornerRadius="2" Height="4" Margin="0,4,0,0">
+              <Border x:Name="BarCpu" HorizontalAlignment="Left" CornerRadius="2" Background="#FF2DD4BF" Width="0"/>
+            </Border>
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <Grid>
+              <TextBlock Text="RAM" FontFamily="Segoe UI" FontSize="9" FontWeight="SemiBold" Foreground="#FF6B7280"/>
+              <TextBlock x:Name="LineRam" Text="--" FontFamily="Segoe UI" FontSize="10" Foreground="#FFD4D4D8"
+                         HorizontalAlignment="Right"/>
+            </Grid>
+            <Border Background="#26FFFFFF" CornerRadius="2" Height="4" Margin="0,4,0,0">
+              <Border x:Name="BarRam" HorizontalAlignment="Left" CornerRadius="2" Background="#FF2DD4BF" Width="0"/>
+            </Border>
+          </StackPanel>
+          <StackPanel Grid.Column="4">
+            <Grid>
+              <TextBlock Text="GPU" FontFamily="Segoe UI" FontSize="9" FontWeight="SemiBold" Foreground="#FF6B7280"/>
+              <TextBlock x:Name="LineGpu" Text="--" FontFamily="Segoe UI" FontSize="10" Foreground="#FFD4D4D8"
+                         HorizontalAlignment="Right"/>
+            </Grid>
+            <Border Background="#26FFFFFF" CornerRadius="2" Height="4" Margin="0,4,0,0">
+              <Border x:Name="BarGpu" HorizontalAlignment="Left" CornerRadius="2" Background="#FF2DD4BF" Width="0"/>
+            </Border>
+          </StackPanel>
+        </Grid>
+      </StackPanel>
+
       <Grid x:Name="StatusRow" Margin="0,10,0,0" Cursor="Hand" Background="Transparent"
             ToolTip="Open status.claude.com">
         <Grid.ColumnDefinitions>

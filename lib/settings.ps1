@@ -315,7 +315,7 @@ function Add-SetWindowPage($p) {
     }))
 
     [void]$p.Children.Add((New-SetHeader (T 'set.shown')))
-    foreach ($k in @('showMascot', 'showSky', 'showStatus', 'showSessions', 'showSessionList', 'showAccount', 'showStats', 'showHistory')) {
+    foreach ($k in @('showMascot', 'showSky', 'showStatus', 'showSystem', 'showSessions', 'showSessionList', 'showAccount', 'showStats', 'showHistory')) {
         [void]$p.Children.Add((New-SetToggle $k (T "set.$k")))
     }
 

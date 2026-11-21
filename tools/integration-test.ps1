@@ -239,4 +239,14 @@ Check 'a 5-minute heartbeat keeps a 5-minute-old feed' ((ConvertTo-RemoteSession
 Check 'two missed heartbeats make it stale' ((ConvertTo-RemoteSessions "{""generatedAt"":""$twelve"",""heartbeat"":300,""sessions"":[{""name"":""a""}]}").Count -eq 0)
 Check 'a short heartbeat never shortens the 2 minutes' ((ConvertTo-RemoteSessions "{""generatedAt"":""$([DateTime]::UtcNow.AddSeconds(-100).ToString('yyyy-MM-ddTHH:mm:ssZ'))"",""heartbeat"":5,""sessions"":[{""name"":""a""}]}").Count -eq 1)
 'PASS  remote sessions from a gist: addresses, file pick, staleness'
+
+. (Read-Function 'lib\sysload.ps1' 'Select-SysGpu')
+$nv  = @{ name = 'NVIDIA GeForce RTX 5070'; total = 12GB; used = 1GB }
+$amd = @{ name = 'AMD Radeon(TM) Graphics'; total = 512MB; used = 0 }
+Check 'the card with the most memory of its own' ((Select-SysGpu @($amd, $nv) '').name -eq $nv.name)
+Check 'sysGpu picks by part of the name' ((Select-SysGpu @($nv, $amd) 'radeon').name -eq $amd.name)
+Check 'an unknown sysGpu falls back to the biggest' ((Select-SysGpu @($amd, $nv) 'intel').name -eq $nv.name)
+Check 'a card without memory of its own is skipped' ((Select-SysGpu @(@{ name = 'Basic'; total = 0; used = 0 }, $amd) '').name -eq $amd.name)
+Check 'no cards - nothing' ($null -eq (Select-SysGpu @() ''))
+'PASS  system load: which graphics card is shown'
 "all passed ($script:Checked checks)"

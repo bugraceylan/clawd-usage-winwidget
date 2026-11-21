@@ -71,7 +71,7 @@ Remove-Item (Join-Path $env:TEMP 'cuw-*') -Recurse -Force -Confirm:$false -Error
 # Modules are dot-sourced into the shared script scope: order matters, each one
 # relies on the variables and functions of the previous ones.
 foreach ($m in @(
-    'config', 'i18n', 'launch', 'usage', 'version', 'account', 'sessions', 'clawd-session', 'status', 'format', 'theme', 'window',
+    'config', 'i18n', 'launch', 'usage', 'version', 'account', 'sessions', 'clawd-session', 'status', 'format', 'theme', 'window', 'sysload',
     'mascot', 'skins', 'hearts', 'mascot-step', 'weather', 'sky', 'scene', 'space', 'ocean', 'christmas', 'halloween', 'cyberpunk', 'advisor', 'history','reminders', 'lists', 'chat', 'tasks', 'actions', 'panel', 'panel-pages', 'panel-jobs', 'remind-popup', 'settings', 'claude-settings', 'mascot-menu', 'tray',
     'update', 'tray-menu', 'events'
   )) {
